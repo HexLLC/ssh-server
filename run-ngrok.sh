@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Start SSH service
+# Start SSH service in the background
 /usr/sbin/sshd -D &
 
-# Run ngrok with the provided authtoken and tunnel HTTP traffic on port 80
+# Run ngrok HTTP tunnel on port 80 using the provided authtoken
 ngrok http 80 --authtoken ${NGROK_AUTHTOKEN}
