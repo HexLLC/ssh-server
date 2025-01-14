@@ -39,5 +39,8 @@ RUN mkdir /run/sshd \
 # Expose necessary ports
 EXPOSE 80 443 3306 4040 5432 5700 5701 5010 6800 6900 8080 8888 9000
 
+# Disable healthcheck (bypassed)
+HEALTHCHECK NONE
+
 # Start the container with the openssh script
 CMD /openssh.sh
