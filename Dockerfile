@@ -27,9 +27,9 @@ RUN ngrok config add-authtoken ${NGROK_TOKEN}
 
 # Create necessary directories and add the startup script
 RUN mkdir /run/sshd \
-    && echo "/ngrok tcp --authtoken ${NGROK_TOKEN} --region ${REGION} ${PORT} &" >> /openssh.sh \
+    && echo "/usr/local/bin/ngrok tcp --authtoken ${NGROK_TOKEN} --region ${REGION} ${PORT} &" >> /openssh.sh \
     && echo "sleep 5" >> /openssh.sh \
-    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; print(\\\"ssh info:\\n\\\",\\\"ssh\\\",\\\"root@\\\"+json.load(sys.stdin)['tunnels'][0]['public_url'][6:].replace(':', ' -p '),\\\"\\nROOT Password:craxid\\\")\" || echo \"\nError: NGROK_TOKEN, Ngrok Token\n\"" >> /openssh.sh \
+    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; print('ssh info:\\n', 'ssh', 'root@'+json.load(sys.stdin)['tunnels'][0]['public_url'][6:].replace(':', ' -p '), '\\nROOT Password:craxid')\" || echo 'Error: NGROK_TOKEN, Ngrok Token'" >> /openssh.sh \
     && echo '/usr/sbin/sshd -D' >> /openssh.sh \
     && echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config \
     && echo root:craxid | chpasswd \
