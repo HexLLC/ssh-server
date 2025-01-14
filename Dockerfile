@@ -2,13 +2,11 @@ FROM debian:latest
 
 # Define build-time arguments
 ARG NGROK_TOKEN
-ARG REGION=ap
 ARG PORT=22
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NGROK_TOKEN=${NGROK_TOKEN}
-ENV REGION=${REGION}
 ENV PORT=${PORT}
 
 # Install necessary dependencies and ngrok
@@ -24,11 +22,15 @@ RUN apt update && apt upgrade -y && apt install -y \
 # Add Ngrok authtoken
 RUN ngrok config add-authtoken ${NGROK_TOKEN}
 
+# Create python script to parse ngrok output
+RUN echo '#!/usr/bin/python3\nimport sys, json\ntunnels = json.load(sys.stdin).get("tunnels", [])\nif tunnels:\n    public_url = tunnels[0]["public_url"][6:]\n    host, port = public_url.split(":")\n    print(f"SSH info:\\nssh root@{host} -p {port}\\nROOT Password: craxid")\nelse:\n    print("Ngrok tunnels not found.")' > /parse_tunnel.py \
+    && chmod +x /parse_tunnel.py
+
 # Create necessary directories and add the startup script
 RUN mkdir /run/sshd \
-    && echo "/usr/local/bin/ngrok tcp --region ${REGION} ${PORT} &" >> /openssh.sh \
+    && echo "/usr/local/bin/ngrok tcp ${PORT} &" >> /openssh.sh \
     && echo "sleep 5" >> /openssh.sh \
-    && echo "curl -s http://localhost:4040/api/tunnels | python3 -c 'import sys, json; tunnels = json.load(sys.stdin).get(\"tunnels\", []); public_url = tunnels[0][\"public_url\"][6:] if tunnels else \"\"; print(f\"SSH info:\\nssh root@{public_url.replace(\":\", \" -p \")}\\nROOT Password: craxid\") if public_url else print(\"Ngrok tunnels not found.\")'" >> /openssh.sh \
+    && echo "curl -s http://localhost:4040/api/tunnels | /parse_tunnel.py" >> /openssh.sh \
     && echo '/usr/sbin/sshd -D' >> /openssh.sh \
     && echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config \
     && echo root:craxid | chpasswd \
