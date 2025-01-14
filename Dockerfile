@@ -28,10 +28,13 @@ RUN echo '#!/usr/bin/python3\nimport sys, json\ntunnels = json.load(sys.stdin).g
 
 # Create necessary directories and add the startup script
 RUN mkdir /run/sshd \
-    && echo "/usr/local/bin/ngrok tcp ${PORT} &" >> /openssh.sh \
+    && echo "#!/bin/bash" > /openssh.sh \
+    && echo "/usr/local/bin/ngrok tcp ${PORT} > /dev/null 2>&1 &" >> /openssh.sh \
     && echo "sleep 5" >> /openssh.sh \
     && echo "curl -s http://localhost:4040/api/tunnels | /parse_tunnel.py" >> /openssh.sh \
-    && echo '/usr/sbin/sshd -D' >> /openssh.sh \
+    && echo "echo 'Container is running... Use Ctrl+C to stop'" >> /openssh.sh \
+    && echo '/usr/sbin/sshd -D &' >> /openssh.sh \
+    && echo 'while true; do sleep 3600; done' >> /openssh.sh \
     && echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config \
     && echo root:craxid | chpasswd \
     && chmod 755 /openssh.sh
@@ -40,4 +43,4 @@ RUN mkdir /run/sshd \
 EXPOSE 80 443 3306 4040 5432 5700 5701 5010 6800 6900 8080 8888 9000
 
 # Start the container with the openssh script
-CMD /openssh.sh
+CMD ["/openssh.sh"]
